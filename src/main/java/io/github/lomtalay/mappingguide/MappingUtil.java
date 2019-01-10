@@ -142,8 +142,21 @@ public class MappingUtil {
 	private static Enum<?> enumPick(Class<? extends Enum> enumType, Object value) {
 		Object enumSet[] = enumType.getEnumConstants();
 		for(int i=0;i<enumSet.length;i++) {
-			if(enumSet[i].toString().equals(value)) {
-				return (Enum<?>) enumSet[i]; 
+			
+			if(logger.isTraceEnabled()) {
+				logger.trace(" enumSet["+i+"] is " + enumSet[i] + ", checking value is " + value);
+			}
+			
+			
+			if(	enumSet[i].toString() != null ) {
+				if( enumSet[i].toString()
+								.equals(value)) {
+					return (Enum<?>) enumSet[i];
+				}
+			} else {
+				if(value == null) {
+					return (Enum<?>) enumSet[i];
+				}
 			}
 		}
 
@@ -248,6 +261,7 @@ public class MappingUtil {
 						if(value != null) {
 							
 							Class fieldType = currentField.getType();
+							
 							currentField.set(
 									destBean, 
 									valueTypeCaster.cast(value, fieldType));
@@ -274,7 +288,7 @@ public class MappingUtil {
 				
 			} catch (Exception e) {
 				//IllegalArgumentException, IllegalAccessException 
-				throw new RuntimeException(e);
+				throw new RuntimeException("Error at field {"+currentField.getName()+"} : " + e.getMessage(), e);
 			}
 		} 
 		

@@ -51,6 +51,10 @@ public class ValueTypeCasterDefaultImpl implements ValueTypeCaster {
 				
 				return new Date((Long)source);
 			}
+		} else
+		if(	targetClass.equals(String.class)) {
+			
+			return String.valueOf(source);
 		} 
 		
 		throw new RuntimeException("Unsupport to cast value from <"+sourceType.getName()+"> to <"+targetClass.getName()+">");
