@@ -1,10 +1,7 @@
 package io.github.lomtalay.mappingguide;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,14 +147,45 @@ public class MappingUtil {
 			}
 		}
 
-		throw new RuntimeException("Value not compatible with type ");
+		throw new RuntimeException("Value ["+value+"] is not compatible with enum <"+enumType.getName()+">");
+	}
+	
+
+	private static MappingGuide getDefaultAnnotationInstance(final Field currentField) {
+		return new MappingGuide() {
+
+			public Class<? extends Annotation> annotationType() {
+				return this.getClass();
+			}
+
+			public String category() {
+				return null;
+			}
+
+			public String key() {
+				return currentField.getName();
+			}
+
+			public NamingStrictLevel namingStrict() {
+				return NamingStrictLevel.STRICT;
+			}
+
+			public FillCondition condition() {
+				return FillCondition.SKIP_NULL_REPLACEMENT;
+			}};
 	}
 	
 	//Copy field value follow MappingGuide
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private static void fillField(String targetCategory, Field currentField, Object destBean, Object sourceBean, ValueTypeCaster valueTypeCaster) {
 		
-		MappingGuide mappingGuide = extractMappingGuide(targetCategory, currentField);
+		MappingGuide mappingGuide;
+		
+		if(targetCategory != null) {
+			mappingGuide = extractMappingGuide(targetCategory, currentField);
+		} else {
+			mappingGuide = getDefaultAnnotationInstance(currentField);
+		}
 		
 		if(mappingGuide != null) {
 			try {
@@ -183,7 +211,7 @@ public class MappingUtil {
 					Object tmp = currentField.get(destBean);
 					
 					if(logger.isTraceEnabled()) {
-						logger.trace(" field value " + tmp);
+						logger.trace(" current field value is " + tmp);
 					}
 					if(tmp != null) {
 						if(logger.isTraceEnabled()) {
@@ -212,6 +240,11 @@ public class MappingUtil {
 					try {
 						currentField.set(destBean, value);
 					} catch(IllegalArgumentException ee) {
+						
+						if(logger.isTraceEnabled()) {
+							logger.trace(" fail : " + ee.getMessage() + " :: retry using type casting  ");
+						}
+						
 						if(value != null) {
 							
 							Class fieldType = currentField.getType();
@@ -231,12 +264,19 @@ public class MappingUtil {
 						}
 					}
 				}
+				
+				
+				
+				if(logger.isTraceEnabled()) {
+					Object tmp = currentField.get(destBean);
+					logger.trace(" finally value of field {" +currentField.getName() + "} = " + tmp);
+				}
+				
 			} catch (Exception e) {
 				//IllegalArgumentException, IllegalAccessException 
 				throw new RuntimeException(e);
 			}
-		}
-		
+		} 
 		
 	}
 	

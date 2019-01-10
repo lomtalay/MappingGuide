@@ -13,6 +13,12 @@ public class ValueTypeCasterDefaultImpl implements ValueTypeCaster {
 
 	public Object cast(Object source, Class targetClass) {
 		
+		if(logger.isTraceEnabled()) {
+			logger.trace(" cast value from "
+					+ " [" + source + ((source!=null)?"<"+source.getClass().getName()+">":"") + " ] to "
+					+ " <"+((targetClass!=null)?targetClass.getName():null)+">");
+		}
+		
 		if(targetClass == null) return null;
 		if(source == null) return null;
 		

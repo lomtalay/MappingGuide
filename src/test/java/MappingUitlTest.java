@@ -22,6 +22,8 @@ import java.sql.Date;
 public class MappingUitlTest {
 
 	protected Logger logger = LoggerFactory.getLogger(MappingUtil.class);
+	
+	private PersonInfo person1 = new PersonInfo();
 
 	@Ignore
 	@Test
@@ -36,8 +38,6 @@ public class MappingUitlTest {
 		logger.error("ERROR");
 		
 		
-		
-		PersonInfo person = new PersonInfo();
 		
 		SoapResult01 dataPart1 = new SoapResult01();
 		dataPart1.setFST_NM("lomtalay");
@@ -68,28 +68,28 @@ public class MappingUitlTest {
 		
 
 		logger.info("\n\nfillBean  SOAP-01");
-		MappingUtil.fillBean("SOAP-01", person, dataPart1);
+		MappingUtil.fillBean("SOAP-01", person1, dataPart1);
 		logger.info("\n\nfillBean  SOAP-02");
-		MappingUtil.fillBean("SOAP-02", person, dataPart2);
+		MappingUtil.fillBean("SOAP-02", person1, dataPart2);
 		logger.info("\n\nfillBean  SOAP-03");
-		MappingUtil.fillBean("SOAP-03", person, dataPart3);
+		MappingUtil.fillBean("SOAP-03", person1, dataPart3);
 		logger.info("\n\nfillBean  SOAP-04");
-		MappingUtil.fillBean("SOAP-04", person, dataPart4);
+		MappingUtil.fillBean("SOAP-04", person1, dataPart4);
 		
 		
-		assertThat(person, hasProperty("firstName", equalTo("lomtalay")));
-		assertThat(person, hasProperty("lastName", equalTo("project")));
-		assertThat(person, hasProperty("country", equalTo("thailand")));
-		assertThat(person, hasProperty("birthDate", equalTo(Date.valueOf("1978-12-14"))));
-		assertThat(person, hasProperty("donate", equalTo("bit.ly/2RjjWk3")));
-		assertThat(person, hasProperty("codeInt", equalTo(19781214)));
-		assertThat(person, hasProperty("workAddress", equalTo("42 rock wallaby way")));
-		assertThat(person, hasProperty("workDistrict", equalTo("blaxland")));
-		assertThat(person, hasProperty("workProvince", equalTo("sidney")));
-		assertThat(person, hasProperty("workCountry", equalTo("australia")));
-		assertThat(person, hasProperty("familySize", equalTo(3)));
-		assertThat(person, hasProperty("extraInfo1", equalTo("instrument music, amusement park")));
-		assertThat(person, hasProperty("extraInfo2", equalTo("Fostering Animals, playing games")));
+		assertThat(person1, hasProperty("firstName", equalTo("lomtalay")));
+		assertThat(person1, hasProperty("lastName", equalTo("project")));
+		assertThat(person1, hasProperty("country", equalTo("thailand")));
+		assertThat(person1, hasProperty("birthDate", equalTo(Date.valueOf("1978-12-14"))));
+		assertThat(person1, hasProperty("donate", equalTo("bit.ly/2RjjWk3")));
+		assertThat(person1, hasProperty("codeInt", equalTo(19781214)));
+		assertThat(person1, hasProperty("workAddress", equalTo("42 rock wallaby way")));
+		assertThat(person1, hasProperty("workDistrict", equalTo("blaxland")));
+		assertThat(person1, hasProperty("workProvince", equalTo("sidney")));
+		assertThat(person1, hasProperty("workCountry", equalTo("australia")));
+		assertThat(person1, hasProperty("familySize", equalTo(3)));
+		assertThat(person1, hasProperty("extraInfo1", equalTo("instrument music, amusement park")));
+		assertThat(person1, hasProperty("extraInfo2", equalTo("Fostering Animals, playing games")));
 		
 		//============
 		
@@ -100,21 +100,24 @@ public class MappingUitlTest {
 		dataPart4 = new SoapResult04();
 		
 		logger.info("\n\nfillBean  SOAP-03 with null");
-		MappingUtil.fillBean("SOAP-03", person, dataPart3);
+		MappingUtil.fillBean("SOAP-03", person1, dataPart3);
 		logger.info("\n\nfillBean  SOAP-04 with null");
-		MappingUtil.fillBean("SOAP-04", person, dataPart4);
+		MappingUtil.fillBean("SOAP-04", person1, dataPart4);
 		
-		assertThat(person, hasProperty("workAddress", equalTo("42 rock wallaby way")));
-		assertThat(person, hasProperty("workDistrict", equalTo("blaxland")));
-		assertThat(person, hasProperty("workProvince", equalTo("sidney")));
-		assertThat(person, hasProperty("workCountry", equalTo("australia")));
-		assertThat(person, hasProperty("familySize", equalTo(3)));
-		assertThat(person, hasProperty("extraInfo1", equalTo(null)));
-		assertThat(person, hasProperty("extraInfo2", equalTo(null)));
+
+		assertThat(person1, hasProperty("codeInt", equalTo(0)));
+		assertThat(person1, hasProperty("workAddress", equalTo("42 rock wallaby way")));
+		assertThat(person1, hasProperty("workDistrict", equalTo("blaxland")));
+		assertThat(person1, hasProperty("workProvince", equalTo("sidney")));
+		assertThat(person1, hasProperty("workCountry", equalTo("australia")));
+		assertThat(person1, hasProperty("familySize", equalTo(3)));
+		assertThat(person1, hasProperty("extraInfo1", equalTo(null)));
+		assertThat(person1, hasProperty("extraInfo2", equalTo(null)));
 		
 	}
 	
 
+	@Ignore
 	@Test
 	public void test_002() {
 		
@@ -137,5 +140,34 @@ public class MappingUitlTest {
 		assertThat(pojo, hasProperty("sampleDoubleValue2", equalTo(new Double("2812.2018"))));
 		assertThat(pojo, hasProperty("samplePremitiveDouble2", equalTo(2812.2018d)));
 		
+	}
+	
+
+
+	@Test
+	public void test_003() {
+		
+		test_001();
+				
+
+		PersonInfo person2 = new PersonInfo();
+		
+		logger.info("fillBean  persion1 to person2");
+		MappingUtil.fillBean(null, person2, person1);
+
+
+		assertThat(person2, hasProperty("firstName", equalTo("lomtalay")));
+		assertThat(person2, hasProperty("lastName", equalTo("project")));
+		assertThat(person2, hasProperty("country", equalTo("thailand")));
+		assertThat(person2, hasProperty("birthDate", equalTo(Date.valueOf("1978-12-14"))));
+		assertThat(person2, hasProperty("donate", equalTo("bit.ly/2RjjWk3")));
+		assertThat(person2, hasProperty("codeInt", equalTo(0)));
+		assertThat(person2, hasProperty("workAddress", equalTo("42 rock wallaby way")));
+		assertThat(person2, hasProperty("workDistrict", equalTo("blaxland")));
+		assertThat(person2, hasProperty("workProvince", equalTo("sidney")));
+		assertThat(person2, hasProperty("workCountry", equalTo("australia")));
+		assertThat(person2, hasProperty("familySize", equalTo(3)));
+		assertThat(person2, hasProperty("extraInfo1", equalTo(null)));
+		assertThat(person2, hasProperty("extraInfo2", equalTo(null)));
 	}
 }
