@@ -15,5 +15,7 @@ public class SoapResult01 {
 	private String prop1;
 	
 	private int prop2;
-	private BigInteger prop3; 
+	private BigInteger prop3;
+	
+	private SoapResult02 soap02;
 }

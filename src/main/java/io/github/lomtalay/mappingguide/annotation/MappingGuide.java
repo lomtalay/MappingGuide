@@ -5,6 +5,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.github.lomtalay.mappingguide.ValueExtractor;
+import io.github.lomtalay.mappingguide.ValueTypeCaster;
+import io.github.lomtalay.mappingguide.ValueTypeCasterDefaultImpl;
+
 
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -27,4 +31,7 @@ public @interface MappingGuide {
 	public String key() default "";
 	public NamingStrictLevel namingStrict() default NamingStrictLevel.IGNORE_CASE_AND_UNDERSCORE;
 	public FillCondition condition() default FillCondition.REPLACE_ALWAY;
+	public Class typecaster() default ValueTypeCaster.class; 
+	public Class valueExtractor() default ValueExtractor.class;
+	public String extra() default "";
 }

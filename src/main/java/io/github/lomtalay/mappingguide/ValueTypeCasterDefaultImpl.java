@@ -3,6 +3,8 @@ package io.github.lomtalay.mappingguide;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +60,44 @@ public class ValueTypeCasterDefaultImpl implements ValueTypeCaster {
 		} 
 		
 		throw new RuntimeException("Unsupport to cast value from <"+sourceType.getName()+"> to <"+targetClass.getName()+">");
+	}
+
+	public Object merge(Map<String, Object> sourceValues, String untokenizedKey, Class targetClass) {
+		
+		Object result = null;
+		if(targetClass.equals(String.class)) {
+			
+			String valResult = untokenizedKey;
+			
+			for(String key : sourceValues.keySet()) {
+				Object val = sourceValues.get(key);
+				String strVal = "";
+				if(val != null) {
+					strVal = String.valueOf(sourceValues.get(key));
+				}
+				
+				valResult = valResult.replaceAll(key, strVal);
+			}
+			result = valResult.trim();
+			
+		} else {
+			logger.trace("Unsupport to merge to <"+targetClass.getName()+">");
+		}
+		
+		if(logger.isTraceEnabled()) {
+			logger.trace("Merge result is " + result + ((result!=null)?"<"+result.getClass().getName()+">":""));
+		}
+		
+		return result;
+	}
+
+	public boolean isSupportMerge(Class targetClass) {
+		
+		if(targetClass.equals(String.class)) {
+			return true;
+		}
+
+		return false;
 	}
 
 }

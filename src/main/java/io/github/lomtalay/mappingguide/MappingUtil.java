@@ -2,6 +2,8 @@ package io.github.lomtalay.mappingguide;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ public class MappingUtil {
 
 	protected static Logger logger = LoggerFactory.getLogger(MappingUtil.class);
 	private static ValueTypeCaster defaultValueTypeCaster = new ValueTypeCasterDefaultImpl();
+	private static ValueExtractor defaultValueExtractor = new ValueExtractorDefaultImpl();
 	
 	public static Object extractFieldValue(String fieldName, Object sourceObj) throws IllegalArgumentException, IllegalAccessException {
 		return extractFieldValue(fieldName, sourceObj, 0);
@@ -185,8 +188,65 @@ public class MappingUtil {
 
 			public FillCondition condition() {
 				return FillCondition.SKIP_NULL_REPLACEMENT;
+			}
+
+			public Class typecaster() {
+				return null;
+			}
+
+			public Class valueExtractor() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			public String extra() {
+				// TODO Auto-generated method stub
+				return null;
 			}};
 	}
+	
+	
+	
+	private static void fillValue(Field currentField, Object destBean, Object value, FillCondition targetFillCondition, ValueTypeCaster valueTypeCaster) throws IllegalArgumentException, IllegalAccessException {
+		
+
+		if(targetFillCondition.equals(FillCondition.SKIP_NULL_REPLACEMENT)) {
+			if(value == null) {
+				if(logger.isTraceEnabled()) {
+					logger.trace(" skip to fill null to field ");
+				}
+				return;
+			}
+		}
+		
+		if(currentField.getType().isEnum()) {
+			
+			Class<? extends Enum> enumType = (Class<Enum>)currentField.getType();
+			currentField.set(destBean, enumPick(enumType, value));
+			
+		} else {
+			try {
+				currentField.set(destBean, value);
+			} catch(IllegalArgumentException ee) {
+				
+				if(logger.isTraceEnabled()) {
+					logger.trace(" fail : " + ee.getMessage() + " :: retry using type casting  ");
+				}
+				
+				if(value != null) {
+					
+					Class fieldType = currentField.getType();
+					
+					currentField.set(
+							destBean, 
+							valueTypeCaster.cast(value, fieldType));
+					
+				}
+			}
+		}
+		
+	}
+	
 	
 	//Copy field value follow MappingGuide
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -206,15 +266,56 @@ public class MappingUtil {
 				String targetFieldName = mappingGuide.key();
 				FillCondition targetFillCondition = mappingGuide.condition();
 				NamingStrictLevel namingStrictLevel = mappingGuide.namingStrict();
+				Class expectTypeCasterCls = mappingGuide.typecaster();
+				Class valueExtracterCls = mappingGuide.valueExtractor();
+				ValueExtractor valueExtractor = null;
+				String extraAnnotate = mappingGuide.extra();
 				
-				int namingStrictLevelCode = 0;
-				
-				if(NamingStrictLevel.STRICT.equals(namingStrictLevel)) {
-					namingStrictLevelCode = 3;
-				} else
-				if(NamingStrictLevel.IGNORE_CASE.equals(namingStrictLevel)) {
-					namingStrictLevelCode = 2;
+				if(	expectTypeCasterCls != null && 
+					!expectTypeCasterCls.isInterface()) {
+					
+					logger.debug("Expect to use ValueTypeCaster as <"+expectTypeCasterCls.getName()+">");
+					try {
+						Object overrideValueTypeCaster = mappingGuide.typecaster().newInstance();
+						if(overrideValueTypeCaster instanceof ValueTypeCaster) {
+							valueTypeCaster = (ValueTypeCaster)overrideValueTypeCaster;
+						} else {
+							
+							throw new IllegalArgumentException("Invalid typecaster in @MappingGuide annotation of field {"+currentField.getName()+"} of class <"+currentField.getDeclaringClass().getName()+">" );
+						}
+					} catch (Exception e) {
+						logger.debug("Fail to use expect ValueTypeCaster as <"+expectTypeCasterCls.getName()+"> ", e);
+					}
 				}
+				
+				if(	valueExtracterCls != null && 
+					!valueExtracterCls.isInterface()) {
+						
+					logger.debug("Expect to use ValueTypeCaster as <"+expectTypeCasterCls.getName()+">");
+					try {
+						Object tmpValueExtractor = mappingGuide.valueExtractor().newInstance();
+						if(tmpValueExtractor instanceof ValueExtractor) {
+							valueExtractor = (ValueExtractor)tmpValueExtractor;
+						} else {
+							throw new IllegalArgumentException("Invalid valueExtractor in @MappingGuide annotation of field {"+currentField.getName()+"} of class <"+currentField.getDeclaringClass().getName()+">" );
+						}
+					} catch (Exception e) {
+						logger.debug("Fail to use expect ValueTypeCaster as <"+expectTypeCasterCls.getName()+"> ", e);
+					}
+				}
+				if(valueExtractor == null) {
+					valueExtractor = defaultValueExtractor;
+				}
+				
+				
+//				int namingStrictLevelCode = 0;
+//				
+//				if(NamingStrictLevel.STRICT.equals(namingStrictLevel)) {
+//					namingStrictLevelCode = 3;
+//				} else
+//				if(NamingStrictLevel.IGNORE_CASE.equals(namingStrictLevel)) {
+//					namingStrictLevelCode = 2;
+//				}
 				
 				if(logger.isTraceEnabled()) {
 					logger.trace(" target fill condition " + targetFillCondition);
@@ -234,50 +335,84 @@ public class MappingUtil {
 					}
 				} 
 				
-				Object value = extractFieldValue(targetFieldName, sourceBean, namingStrictLevelCode);
-				if(targetFillCondition.equals(FillCondition.SKIP_NULL_REPLACEMENT)) {
-					if(value == null) {
-						if(logger.isTraceEnabled()) {
-							logger.trace(" skip to fill null to field ");
-						}
-						return;
+				Object value;
+				
+				
+				String fieldNames[] = valueExtractor.tokenizeMappingKey(targetFieldName); 
+				
+				if(fieldNames.length > 1) {
+					
+					if(!valueTypeCaster.isSupportMerge(currentField.getType())) {
+						throw new UnsupportedOperationException("Unsupport to merge multivalue to type <"+currentField.getType().getName()+">");
 					}
+					
+					HashMap<String, Object> values = new HashMap<String, Object>();
+					
+					//Prepare for remove duplicate name.
+					for(String fieldName : fieldNames) {
+						values.put(fieldName, null);
+					}
+					//Put all extract values.
+					for(String fieldName : values.keySet()) {
+						
+						Object subValue = valueExtractor.extractFieldValue(fieldName, sourceBean, namingStrictLevel, extraAnnotate);
+						//extractFieldValue(fieldName, sourceBean, namingStrictLevel);
+						values.put(fieldName, subValue);
+					}
+					
+					value = valueTypeCaster.merge(values, targetFieldName, currentField.getType());
+					fillValue(currentField, destBean, value, targetFillCondition, valueTypeCaster);
+				} else {
+					value = valueExtractor.extractFieldValue(targetFieldName, sourceBean, namingStrictLevel, extraAnnotate); 
+					//extractFieldValue(targetFieldName, sourceBean, namingStrictLevel);
+					fillValue(currentField, destBean, value, targetFillCondition, valueTypeCaster);
 				}
 				
-				if(currentField.getType().isEnum()) {
-					
-					Class<? extends Enum> enumType = (Class<Enum>)currentField.getType();
-					currentField.set(destBean, enumPick(enumType, value));
-					
-				} else {
-					try {
-						currentField.set(destBean, value);
-					} catch(IllegalArgumentException ee) {
-						
-						if(logger.isTraceEnabled()) {
-							logger.trace(" fail : " + ee.getMessage() + " :: retry using type casting  ");
-						}
-						
-						if(value != null) {
-							
-							Class fieldType = currentField.getType();
-							
-							currentField.set(
-									destBean, 
-									valueTypeCaster.cast(value, fieldType));
-							
-//							Class fieldType = currentField.getType();
-//							Class valueType = value.getClass();
-//							if(fieldType.equals(Double.class)) {
-//								if(valueType.equals(BigInteger.class)) {
-//									currentField.set(
-//											destBean, 
-//											((BigInteger)value).doubleValue());
-//								}
+//				{
+//					if(targetFillCondition.equals(FillCondition.SKIP_NULL_REPLACEMENT)) {
+//						if(value == null) {
+//							if(logger.isTraceEnabled()) {
+//								logger.trace(" skip to fill null to field ");
 //							}
-						}
-					}
-				}
+//							return;
+//						}
+//					}
+//					
+//					if(currentField.getType().isEnum()) {
+//						
+//						Class<? extends Enum> enumType = (Class<Enum>)currentField.getType();
+//						currentField.set(destBean, enumPick(enumType, value));
+//						
+//					} else {
+//						try {
+//							currentField.set(destBean, value);
+//						} catch(IllegalArgumentException ee) {
+//							
+//							if(logger.isTraceEnabled()) {
+//								logger.trace(" fail : " + ee.getMessage() + " :: retry using type casting  ");
+//							}
+//							
+//							if(value != null) {
+//								
+//								Class fieldType = currentField.getType();
+//								
+//								currentField.set(
+//										destBean, 
+//										valueTypeCaster.cast(value, fieldType));
+//								
+//	//							Class fieldType = currentField.getType();
+//	//							Class valueType = value.getClass();
+//	//							if(fieldType.equals(Double.class)) {
+//	//								if(valueType.equals(BigInteger.class)) {
+//	//									currentField.set(
+//	//											destBean, 
+//	//											((BigInteger)value).doubleValue());
+//	//								}
+//	//							}
+//							}
+//						}
+//					}
+//				}
 				
 				
 				

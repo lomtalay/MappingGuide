@@ -7,11 +7,13 @@ import static org.hamcrest.Matchers.hasProperty;
 import java.sql.Date;
 
 import io.github.lomtalay.mappingguide.MappingGuideSupported;
+import io.github.lomtalay.mappingguide.ValueTypeCaster;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide.FillCondition;
 import io.github.lomtalay.mappingguide.annotation.MappingGuides;
 import lombok.Getter;
 import lombok.Setter;
+import tester.ext.ValueTypeCasterTesterImpl;
 
 @Getter @Setter
 public class PersonInfo implements MappingGuideSupported {
@@ -57,6 +59,26 @@ public class PersonInfo implements MappingGuideSupported {
 	private String extraInfo1;
 	@MappingGuide(category="SOAP-04", key="hobby")
 	private String extraInfo2;
+	
+
+	
+	@MappingGuide(category="SOAP-06", key="{address1} {address2} {address3}")
+	private String extraInfo6x1;
+	
+	@MappingGuide(category="SOAP-06", key="{address1} {address2} {address3}", typecaster=ValueTypeCasterTesterImpl.class)
+	private String extraInfo6x2;
+	
+	@MappingGuide(category="SOAP-06", key="address1")
+	private String extraInfo6x3;
+	
+	@MappingGuide(category="SOAP-06", key="{info1} {info2}")
+	private String extraInfo6x4;
+	
+	@MappingGuide(category="SOAP-06", key="{info1} {info2}", typecaster=ValueTypeCasterTesterImpl.class)
+	private String extraInfo6x5;
+	
+	@MappingGuide(category="SOAP-06-ERR1", key="{info1} {info2}", typecaster=ValueTypeCasterTesterImpl.class)
+	private int extraInfo6x1Err;
 	
 
 	
