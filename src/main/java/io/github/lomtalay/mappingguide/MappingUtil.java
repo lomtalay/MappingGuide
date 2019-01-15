@@ -2,6 +2,9 @@ package io.github.lomtalay.mappingguide;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -18,8 +21,56 @@ import io.github.lomtalay.mappingguide.annotation.MappingGuide.NamingStrictLevel
 public class MappingUtil {
 
 	protected static Logger logger = LoggerFactory.getLogger(MappingUtil.class);
-	private static ValueTypeCaster defaultValueTypeCaster = new ValueTypeCasterDefaultImpl();
-	private static ValueExtractor defaultValueExtractor = new ValueExtractorDefaultImpl();
+	private static final ValueTypeCaster defaultValueTypeCaster = new ValueTypeCasterDefaultImpl();
+	private static final ValueExtractor defaultValueExtractor = new ValueExtractorDefaultImpl();
+	private static ValueTypeCaster globalValueTypeCaster = defaultValueTypeCaster;
+	private static ValueExtractor globalValueExtractor = defaultValueExtractor;
+	private static final HashMap<String, AnnotationBorrower> registeredAnnotationBorrower = new HashMap<String, AnnotationBorrower>();
+	private static final AnnotationBorrower annotationPicker = new AnnotationPicker();
+	
+	/**
+	 * This method use for add other annotation that will allow to borrow to use for mapping.
+	 * AnnotationBorrower will be object to cast source annotation to MappingAnnotation  
+	 * 
+	 * @param category
+	 * @param annotationBorrower
+	 * @param replace (flag to force replace existing registered)
+	 */
+	public static void registerAnnotationBorrower(String category, AnnotationBorrower annotationBorrower, boolean replace) {
+		AnnotationBorrower tmp = registeredAnnotationBorrower.get(category);
+		if(	tmp != null) {
+			if(!replace) {
+				throw new IllegalAccessError("category |"+category+"| is already registered for |"+tmp.getClass().getName()+"|");
+			}
+		}
+		
+		registeredAnnotationBorrower.put(category, annotationBorrower);
+	}
+	
+	public static void setGlobalValueExtractor(ValueExtractor newValueExtractor) {
+		if(newValueExtractor == null) {
+			logger.warn("reset globalValueExtractor to default");
+			globalValueExtractor = defaultValueExtractor;
+		} else {
+			globalValueExtractor = newValueExtractor;
+		}
+	}
+
+	public static void setGlobalTypeCaster(ValueTypeCaster newValueTypeCaster) {
+		if(newValueTypeCaster == null) {
+			logger.warn("reset globalValueTypeCaster to default");
+			globalValueTypeCaster = defaultValueTypeCaster;
+		} else {
+			globalValueTypeCaster = newValueTypeCaster;
+		}
+	}
+
+	public static ValueTypeCaster getGlobalValueTypeCaster() {
+		return globalValueTypeCaster;
+	}
+	public static ValueExtractor getGlobalValueExtractor() {
+		return globalValueExtractor;
+	}
 	
 	public static Object extractFieldValue(String fieldName, Object sourceObj) throws IllegalArgumentException, IllegalAccessException {
 		return extractFieldValue(fieldName, sourceObj, 0);
@@ -76,69 +127,27 @@ public class MappingUtil {
 	
 	private static MappingGuide extractMappingGuide(String targetCategory, Field currentField) {
 		
-		Annotation annotations[] = currentField.getDeclaredAnnotations();
-		
-		if(logger.isTraceEnabled()) {
-			logger.trace("found " + annotations.length + " annotation(s).");
+		if(targetCategory == null) {
+			logger.trace("use default <null> category");
+			targetCategory = "";
 		}
 		
-		for(int i=0;i<annotations.length;i++) {
-			if(annotations[i] instanceof MappingGuide) {
-				if(!targetCategory
-						.equals(
-								((MappingGuide)annotations[i])
-									.category())) {
+		if(	registeredAnnotationBorrower.keySet().size() > 0 )
+		{
+			AnnotationBorrower annoBorrower = registeredAnnotationBorrower.get(targetCategory);
+			
+			if(annoBorrower != null) {
+				MappingGuide borrowAnnotated = annoBorrower.getSupportedAnnotation(targetCategory, currentField);
 
-					if(logger.isTraceEnabled()) {
-						logger.trace( 
-								"[" +
-								((MappingGuide)annotations[i])
-									.category() + 
-								"] is not matched with target category ["+targetCategory+"]");
-					}
-					
-					continue;
-				}
 				if(logger.isTraceEnabled()) {
-					logger.trace("matched category ["+targetCategory+"] guide");
+					logger.trace("use MappingGuide from <"+annoBorrower.getClass().getName()+">");
 				}
 				
-				
-				return (MappingGuide)annotations[i];	
-			} else 
-			if(annotations[i] instanceof MappingGuides) {
-				MappingGuide mappingGuides[] = ((MappingGuides)annotations[i]).value();
-				
-				for(int j=0;j<mappingGuides.length;j++) {
-					if(!targetCategory
-							.equals(mappingGuides[j]
-										.category())) {
-						
-						if(logger.isTraceEnabled()) {
-							logger.trace( 
-									"<" + i +">" + 
-									"[" +
-									mappingGuides[j]
-											.category() + 
-									"] is not matched with target category ["+targetCategory+"]");
-						}
-						
-						continue;
-					}
-					if(logger.isTraceEnabled()) {
-						logger.trace("<" + i +">" + "matched category ["+targetCategory+"] guide");
-					}
-					
-					return mappingGuides[j];
-				}	
-			} else {
-				if(logger.isTraceEnabled()) {
-					logger.trace(annotations[i].getClass().getName() + " is not support for MappingGuide");
-				}
+				return borrowAnnotated;
 			}
 		}
 		
-		return null;
+		return annotationPicker.getSupportedAnnotation(targetCategory, currentField);
 	}
 	
 	@SuppressWarnings({ "rawtypes" })
@@ -168,6 +177,7 @@ public class MappingUtil {
 	
 
 	private static MappingGuide getDefaultAnnotationInstance(final Field currentField) {
+		
 		return new MappingGuide() {
 
 			public Class<? extends Annotation> annotationType() {
@@ -195,12 +205,10 @@ public class MappingUtil {
 			}
 
 			public Class valueExtractor() {
-				// TODO Auto-generated method stub
 				return null;
 			}
 
 			public String extra() {
-				// TODO Auto-generated method stub
 				return null;
 			}};
 	}
@@ -256,6 +264,10 @@ public class MappingUtil {
 		
 		if(targetCategory != null) {
 			mappingGuide = extractMappingGuide(targetCategory, currentField);
+			if(mappingGuide == null) {
+				logger.trace("Not found compatible MappingGuide annotation, using default mapping.");
+				mappingGuide = getDefaultAnnotationInstance(currentField);
+			}
 		} else {
 			mappingGuide = getDefaultAnnotationInstance(currentField);
 		}
@@ -304,7 +316,7 @@ public class MappingUtil {
 					}
 				}
 				if(valueExtractor == null) {
-					valueExtractor = defaultValueExtractor;
+					valueExtractor = globalValueExtractor;
 				}
 				
 				
@@ -429,8 +441,13 @@ public class MappingUtil {
 		
 	}
 	
+	/**
+	 * change to use getGlobalValueTypeCaster() instead
+	 * @return
+	 */
+	@Deprecated
 	public static ValueTypeCaster getDefaultValueTypeCaster() {
-		return defaultValueTypeCaster;
+		return globalValueTypeCaster;
 	}
 	
 	@SuppressWarnings("rawtypes")
@@ -442,7 +459,7 @@ public class MappingUtil {
 	public static void fillBean(String targetCategory, MappingGuideSupported destBean, Object sourceBean, ValueTypeCaster valueTypeCaster) {
 		
 		if(valueTypeCaster == null) {
-			valueTypeCaster = defaultValueTypeCaster;
+			valueTypeCaster = globalValueTypeCaster;
 		}
 		Class destClass = destBean.getClass();
 		Field fields[] = destClass.getDeclaredFields();
