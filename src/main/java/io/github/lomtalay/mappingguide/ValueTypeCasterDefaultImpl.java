@@ -3,15 +3,15 @@ package io.github.lomtalay.mappingguide;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.lomtalay.logger.LocalLogger;
+
+
 
 public class ValueTypeCasterDefaultImpl implements ValueTypeCaster {
 	
-	protected Logger logger = LoggerFactory.getLogger(getClass());
+	protected LocalLogger logger = LocalLogger.getLogger(getClass());
 
 	public Object cast(Object source, Class targetClass) {
 		

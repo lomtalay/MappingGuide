@@ -7,11 +7,12 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import org.slf4j.LoggerFactory;
+
+import io.github.lomtalay.logger.LocalLogger;
 
 public class MainClass {
 	
-	org.slf4j.Logger log = LoggerFactory.getLogger(getClass());
+	LocalLogger log = LocalLogger.getLogger(getClass());
 
 	void doAction() {
 		log.trace("TRACE");

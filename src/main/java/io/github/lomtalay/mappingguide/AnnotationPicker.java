@@ -6,9 +6,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.github.lomtalay.logger.LocalLogger;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide;
 import io.github.lomtalay.mappingguide.annotation.MappingGuides;
 
@@ -16,7 +14,7 @@ import io.github.lomtalay.mappingguide.annotation.MappingGuides;
 @SuppressWarnings("rawtypes")
 public class AnnotationPicker implements AnnotationBorrower {
 	
-	protected Logger logger = LoggerFactory.getLogger(getClass());
+	protected LocalLogger logger = LocalLogger.getLogger(getClass());
 
 
 	private Annotation unwrapFromProxy(Proxy proxy) throws Throwable {

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.lomtalay</groupId>
 	<artifactId>MappingGuide</artifactId>
-	<version>1.0.1.SNAPSHOT</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<name>MappingGuide</name>
 	<url>https://github.com/lomtalay/MappingGuide</url>
 	<description>Utility to help for combine properties value from multiple POJO to mapping defined POJO</description>
@@ -36,7 +36,6 @@
 	</scm>
 
 	<properties>
-		<org.slf4j.version>1.7.25</org.slf4j.version>
 		<junit.version>4.12</junit.version>
 		<org.projectlombok.version>1.16.20</org.projectlombok.version>
 
@@ -45,13 +44,6 @@
 
 
 	<dependencies>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>${org.slf4j.version}</version>
-		</dependency>
-
-
 		<dependency>
 		    <groupId>org.hibernate.javax.persistence</groupId>
 		    <artifactId>hibernate-jpa-2.1-api</artifactId>

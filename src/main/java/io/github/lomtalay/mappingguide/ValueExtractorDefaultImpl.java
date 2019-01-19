@@ -9,15 +9,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.github.lomtalay.logger.LocalLogger;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide.NamingStrictLevel;;
 
 public class ValueExtractorDefaultImpl implements ValueExtractor {
 	
-	protected Logger logger = LoggerFactory.getLogger(MappingUtil.class);
+	protected LocalLogger logger = LocalLogger.getLogger(MappingUtil.class);
 	private static final String VALID_FIELD_PATTERN_REXP = "[a-zA-Z0-9_]+(\\[[0-9]*\\])?([.][a-zA-Z0-9_]+(\\[[0-9]*\\])?)*";
 	
 	
@@ -87,8 +85,8 @@ public class ValueExtractorDefaultImpl implements ValueExtractor {
 				String checkingFieldName_ = checkingFieldName.replaceAll("_", "");
 				
 				if(logger.isTraceEnabled()) {
-					logger.trace("targetFieldName : " + targetFieldName);
-					logger.trace("checkingFieldName_ : " + checkingFieldName_);
+					logger.trace(	"Check destField : " + targetFieldName + ", " +
+									"sourceField_ : " + checkingFieldName_);
 				}
 				
 				if(targetFieldName
@@ -176,8 +174,8 @@ public class ValueExtractorDefaultImpl implements ValueExtractor {
 				String checkingFieldName_ = checkingFieldName.replaceAll("_", "");
 				
 				if(logger.isTraceEnabled()) {
-					logger.trace("targetFieldName : " + targetFieldName);
-					logger.trace("checkingFieldName_ : " + checkingFieldName_);
+					logger.trace("targetFieldName : " + targetFieldName + " , " + 
+								 "checkingFieldName_ : " + checkingFieldName_);
 				}
 				
 				if(targetFieldName

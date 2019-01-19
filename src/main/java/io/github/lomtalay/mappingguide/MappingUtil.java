@@ -9,9 +9,7 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.github.lomtalay.logger.LocalLogger;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide;
 import io.github.lomtalay.mappingguide.annotation.MappingGuides;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide.FillCondition;
@@ -21,7 +19,7 @@ import io.github.lomtalay.mappingguide.annotation.MappingGuide.NamingStrictLevel
 
 public class MappingUtil {
 
-	protected static Logger logger = LoggerFactory.getLogger(MappingUtil.class);
+	protected static LocalLogger logger = LocalLogger.getLogger(MappingUtil.class);
 	private static final ValueTypeCaster defaultValueTypeCaster = new ValueTypeCasterDefaultImpl();
 	private static final ValueExtractor defaultValueExtractor = new ValueExtractorDefaultImpl();
 	private static ValueTypeCaster globalValueTypeCaster = defaultValueTypeCaster;
@@ -278,7 +276,7 @@ public class MappingUtil {
 		if(targetCategory != null) {
 			mappingGuide = extractMappingGuide(targetCategory, currentField);
 			if(mappingGuide == null) {
-				logger.trace("Not found compatible MappingGuide annotation, using default mapping.");
+				logger.trace("Not found compatible MappingGuide annotation for field ["+currentField.getName()+"] of class <"+ destBean.getClass().getName() +"> , using default mapping.");
 				mappingGuide = getDefaultAnnotationInstance(currentField);
 			}
 		} else {

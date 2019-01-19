@@ -1,8 +1,8 @@
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import io.github.lomtalay.logger.LocalLogger;
 import io.github.lomtalay.mappingguide.MappingUtil;
 import tester.pojo.SoapResult01;
 import tester.pojo.SoapResult02;
@@ -16,17 +16,42 @@ import tester.pojo.Pojo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 public class MappingUitlTest {
 
-	protected Logger logger = LoggerFactory.getLogger(MappingUtil.class);
+	protected LocalLogger logger = LocalLogger.getLogger(MappingUtil.class);
 	
 	private PersonInfo person1 = new PersonInfo();
+	
+	@BeforeClass
+	public static void beforeClass() {
+
+		LogManager logManager = LogManager.getLogManager();
+		Logger LOGGER = Logger.getLogger("TesterLogger");
+
+
+		try {
+			logManager.readConfiguration(ClassLoader.getSystemResourceAsStream("simplelogger.properties"));
+		} catch (IOException exception) {
+            LOGGER.log(Level.SEVERE, "Error in loading configuration",exception);
+		}
+		
+		LocalLogger localLog = LocalLogger.getLogger(MappingUtil.class);
+		
+		LOGGER.log(Level.INFO, "MappingUtil.logger.level = " + localLog.getLevel());
+	}
 
 	@Ignore
 	@Test
