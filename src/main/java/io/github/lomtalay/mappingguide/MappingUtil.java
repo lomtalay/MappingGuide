@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -214,7 +215,6 @@ public class MappingUtil {
 	}
 	
 	
-	
 	private static void fillValue(Field currentField, Object destBean, Object value, FillCondition targetFillCondition, ValueTypeCaster valueTypeCaster) throws IllegalArgumentException, IllegalAccessException {
 		
 
@@ -261,6 +261,19 @@ public class MappingUtil {
 	private static void fillField(String targetCategory, Field currentField, Object destBean, Object sourceBean, ValueTypeCaster valueTypeCaster) {
 		
 		MappingGuide mappingGuide;
+		
+		
+		
+		int fieldModifiers = currentField.getModifiers();
+	    if(	Modifier.isStatic(fieldModifiers) ) {
+	    	logger.debug("Skip static field.");
+	    	return;
+	    }
+	    if(	Modifier.isFinal(fieldModifiers)) {
+	    	logger.debug("Skip final field.");
+	    	return;
+	    }
+		
 		
 		if(targetCategory != null) {
 			mappingGuide = extractMappingGuide(targetCategory, currentField);
@@ -468,7 +481,7 @@ public class MappingUtil {
 			
 			if(logger.isTraceEnabled()) {
 				logger.trace(" process field " + fields[i].getName() + "... ");
-			}
+			}	
 			
 			fillField(targetCategory, fields[i], destBean, sourceBean, valueTypeCaster);
 		}

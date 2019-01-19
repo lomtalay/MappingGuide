@@ -1,5 +1,7 @@
 package tester.pojo;
 
+import java.io.Serializable;
+
 import io.github.lomtalay.mappingguide.MappingGuideSupported;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide;
 import lombok.Getter;
@@ -7,7 +9,13 @@ import lombok.Setter;
 import tester.ext.ValueTypeCasterTesterImpl;
 
 @Getter @Setter
-public class Pojo implements MappingGuideSupported {
+public class Pojo implements MappingGuideSupported, Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
 
 	@MappingGuide(category="SOAP-05", key="sampleBigInteger")
 	private Double sampleDoubleValue;
