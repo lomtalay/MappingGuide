@@ -36,7 +36,7 @@ public class MappingUitlTest {
 	private PersonInfo person1 = new PersonInfo();
 	
 	@BeforeClass
-	public static void beforeClass() {
+	public static void beforeClassJul() {
 
 		LogManager logManager = LogManager.getLogManager();
 		Logger LOGGER = Logger.getLogger("TesterLogger");
@@ -53,6 +53,8 @@ public class MappingUitlTest {
 		LOGGER.log(Level.INFO, "MappingUtil.logger.level = " + localLog.getLevel());
 	}
 
+	
+	
 	@Ignore
 	@Test
 	public void test_001() {

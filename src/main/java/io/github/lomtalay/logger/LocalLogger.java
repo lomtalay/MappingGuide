@@ -1,12 +1,13 @@
 package io.github.lomtalay.logger;
 
+import java.io.PrintWriter;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
+
 
 /*
 
@@ -22,75 +23,116 @@ SEVERE  -> ERROR
 
 public class LocalLogger {
 
+	private LocalLogLevel level;
+	private static PrintWriter pw;
 	
-	private Logger realLog;
+	
+	public static void setLogWriter(PrintWriter newPw) {
+		pw = newPw;
+	}
+	
+	private static Level forceLevel = null;
+	private static final Logger internalLoger = Logger.getLogger("io.github.lomtalay.logger.LocalLogger");
+	private static boolean initFlag = false;
+	
+	private Logger julLogger = null;
+	
+	public static void setForceLevel(String levelName) {
+		forceLevel = LocalLogLevel.parseFromName(levelName);
+	}
+	
+	private static void InternalLog(String msg, Throwable t) {
+		
+		if(internalLoger.getLevel() == null) {
+			internalLoger.setLevel(LocalLogLevel.DEBUG);
+			Handler hh[] = internalLoger.getHandlers();
+			for(int i=0;i<hh.length;i++) {
+				internalLoger.removeHandler(hh[i]);
+			}
+			
+			ConsoleHandler consoleHandler = new ConsoleHandler();
+			consoleHandler.setLevel(Level.ALL);
+			SimpleFormatter internalFormatter = new SimpleFormatter();
+			consoleHandler.setFormatter(internalFormatter);
+			internalLoger.addHandler(consoleHandler);
+		}
+		
+		
+		LogRecord lr = new LogRecord(LocalLogLevel.INFO, msg);
+        lr.setThrown(t);
+        
+        try {
+        	internalLoger.log(lr);
+        } catch(Throwable tt) {
+        	System.err.println(msg);
+        }
+	}
 
 	protected LocalLogger(String name) {
 		
 		
-		realLog = Logger.getLogger(name);
+		julLogger = Logger.getLogger(name);
 		
-		if(realLog.getLevel() == null) {
-			//Logger rootLogger = Logger.getLogger("");
-			realLog.setLevel(realLog.getParent().getLevel());
-//			Handler hdl[] = rootLogger.getHandlers();
-//			for(int i=0;i<hdl.length;i++) {
-//				realLog.addHandler(hdl[i]);
-//			}
+		if(julLogger.getLevel() == null) {
+			julLogger.setLevel(julLogger.getParent().getLevel());
+			Handler hh[] = internalLoger.getHandlers();
+			boolean foundConsole = false;
+			for(int i=0;i<hh.length;i++) {
+				if(hh[i] instanceof ConsoleHandler) {
+					((ConsoleHandler)hh[i]).setLevel(Level.ALL);;
+					foundConsole = true;
+				}
+			}
+			if(!foundConsole) {
+				ConsoleHandler consoleHandler = new ConsoleHandler();
+				consoleHandler.setLevel(Level.ALL);
+				julLogger.addHandler(consoleHandler);
+			}
+			
+
+			String forceLevelStr = System.getProperty("io.github.lomtalay.log.level");
+			if(forceLevelStr != null && forceLevel == null) {
+				System.out.println("io.github.lomtalay.log.level="+forceLevelStr);
+				forceLevel = LocalLogLevel.parseFromName(forceLevelStr);
+				System.out.println("sel default log level = "+forceLevel);
+				julLogger.setLevel(forceLevel);
+				
+				if(System.getProperty("io.github.lomtalay.log.level.debug")!=null) {
+					julLogger.log(createLogRecord(LocalLogLevel.TRACE, "check log trace level", null));
+					julLogger.log(createLogRecord(LocalLogLevel.DEBUG, "check log debug level", null));
+					julLogger.log(createLogRecord(LocalLogLevel.INFO, "check log info level", null));
+					julLogger.log(createLogRecord(LocalLogLevel.WARN, "check log warn level", null));
+					julLogger.log(createLogRecord(LocalLogLevel.ERROR, "check log error level", null));
+				}
+			}	
+		} else 
+		if(forceLevel != null) {
+			julLogger.setLevel(forceLevel);
 		}
 	}
 	
 
 	public static LocalLogger getLogger(Class cls) {
-		
 		return new LocalLogger(cls.getName());
 	}
 	
+	
 
 	public boolean isErrorEnabled() {
-		return realLog.isLoggable(LocalLogLevel.ERROR);
+		return julLogger.isLoggable(LocalLogLevel.ERROR);
 	}
 	public boolean isWarnEnabled() {
-		return realLog.isLoggable(LocalLogLevel.WARN);
+		return julLogger.isLoggable(LocalLogLevel.WARN);
 	}
 	public boolean isInfoEnabled() {
-		return realLog.isLoggable(LocalLogLevel.INFO);
+		return julLogger.isLoggable(LocalLogLevel.INFO);
 	}
 	public boolean isDebugEnabled() {
-		return realLog.isLoggable(LocalLogLevel.DEBUG);
+		return julLogger.isLoggable(LocalLogLevel.DEBUG);
 	}
 	public boolean isTraceEnabled() {
-		return realLog.isLoggable(LocalLogLevel.TRACE);
+		return julLogger.isLoggable(LocalLogLevel.TRACE);
 	}
-//	
-//	private String localFormatMsg(String msg) {
-//		StackTraceElement steSet[] = Thread.currentThread().getStackTrace();
-//		StackTraceElement ste = null;
-//		
-//		for(int i=0;i<steSet.length;i++) {
-//			if(steSet[i].getClassName().equals(LocalLogger.class)) {
-//				continue;
-//			}
-//			
-//			ste = steSet[i];
-//			break;
-//		}
-//		
-//
-//		
-//		String fullClassName = ste.getClassName();
-//	    String className = fullClassName.substring(fullClassName.lastIndexOf(".") + 1);
-//	    String fileName = ste.getFileName();
-//	    String methodName = ste.getMethodName();
-//	    int lineNumber = ste.getLineNumber();
-//	    StringBuilder sb = new StringBuilder();
-//	    
-//	    sb	.append("<").append(fullClassName).append("#").append(methodName).append(">")
-//	    	.append("(").append(fileName).append(":").append(String.valueOf(lineNumber)).append(") - ")
-//	    	.append(msg);
-//	    
-//	    return sb.toString();
-//	}
 	
 	private LogRecord createLogRecord(Level level, String msg, Throwable t) {
 		
@@ -116,27 +158,52 @@ public class LocalLogger {
 	
 	public void error(String msg, Throwable t) {
 		if(isErrorEnabled()) {
-	        realLog.log(createLogRecord(LocalLogLevel.ERROR, msg, t));
+			try {
+				julLogger.log(createLogRecord(LocalLogLevel.ERROR, msg, t));
+			} catch(Throwable e) {
+				System.err.println(msg);
+				if(t!=null) t.printStackTrace(System.err);
+			}
 		}
 	}
 	public void warn(String msg, Throwable t) {
 		if(isWarnEnabled()) {
-	        realLog.log(createLogRecord(LocalLogLevel.WARN, msg, t));
+			try {
+				julLogger.log(createLogRecord(LocalLogLevel.WARN, msg, t));
+			} catch(Throwable e) {
+				System.err.println(msg);
+				if(t!=null) t.printStackTrace(System.err);
+			}
 		}
 	}
 	public void info(String msg, Throwable t) {
 		if(isInfoEnabled()) {
-	        realLog.log(createLogRecord(LocalLogLevel.INFO, msg, t));
+			try {
+				julLogger.log(createLogRecord(LocalLogLevel.INFO, msg, t));
+			} catch(Throwable e) {
+				System.err.println(msg);
+				if(t!=null) t.printStackTrace(System.err);
+			}
 		}
 	}
 	public void debug(String msg, Throwable t) {
 		if(isDebugEnabled()) {
-	        realLog.log(createLogRecord(LocalLogLevel.DEBUG, msg, t));
+			try {
+				julLogger.log(createLogRecord(LocalLogLevel.DEBUG, msg, t));
+			} catch(Throwable e) {
+				System.err.println(msg);
+				if(t!=null) t.printStackTrace(System.err);
+			}
 		}
 	}
 	public void trace(String msg, Throwable t) {
 		if(isTraceEnabled()) {
-	        realLog.log(createLogRecord(LocalLogLevel.TRACE, msg, t));
+			try {
+				julLogger.log(createLogRecord(LocalLogLevel.TRACE, msg, t));
+			} catch(Throwable e) {
+				System.err.println(msg);
+				if(t!=null) t.printStackTrace(System.err);
+			}
 		}
 	}
 	
@@ -159,7 +226,7 @@ public class LocalLogger {
 
 
 	public String getLevel() {
-		return String.valueOf(realLog.getLevel());
+		return String.valueOf(julLogger.getLevel());
 	}
 	
 
@@ -175,6 +242,26 @@ public class LocalLogger {
 
 		protected LocalLogLevel(String name, int value) {
 			super(name, value);
+		}
+		
+		protected static Level parseFromName(String name) {
+			if("trace".equalsIgnoreCase(name)) {
+				return TRACE;
+			} else
+			if("debug".equalsIgnoreCase(name)) {
+				return DEBUG;
+			} else
+			if("info".equalsIgnoreCase(name)) {
+				return INFO;
+			} else
+			if("warn".equalsIgnoreCase(name)) {
+				return WARN;
+			} else
+			if("error".equalsIgnoreCase(name)) {
+				return ERROR;
+			}
+			
+			return Level.OFF;
 		}
 		
 	}

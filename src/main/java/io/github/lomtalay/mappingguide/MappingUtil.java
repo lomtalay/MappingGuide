@@ -7,9 +7,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 import io.github.lomtalay.logger.LocalLogger;
+import io.github.lomtalay.logger.LocalLogger.LocalLogLevel;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide;
 import io.github.lomtalay.mappingguide.annotation.MappingGuides;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide.FillCondition;
@@ -26,6 +28,10 @@ public class MappingUtil {
 	private static ValueExtractor globalValueExtractor = defaultValueExtractor;
 	private static final HashMap<String, AnnotationBorrower> registeredAnnotationBorrower = new HashMap<String, AnnotationBorrower>();
 	private static final AnnotationBorrower annotationPicker = new AnnotationPicker();
+	
+	public static void forceLogLevel(String levelName) {
+		LocalLogger.setForceLevel(levelName);
+	}
 	
 	/**
 	 * This method use for add other annotation that will allow to borrow to use for mapping.
@@ -469,11 +475,19 @@ public class MappingUtil {
 	@SuppressWarnings("rawtypes")
 	public static void fillBean(String targetCategory, MappingGuideSupported destBean, Object sourceBean, ValueTypeCaster valueTypeCaster) {
 		
+		if(logger.isTraceEnabled()) {
+			logger.trace(" fillBean invoked ");
+		}
+		
 		if(valueTypeCaster == null) {
 			valueTypeCaster = globalValueTypeCaster;
 		}
 		Class destClass = destBean.getClass();
 		Field fields[] = destClass.getDeclaredFields();
+		
+		if(sourceBean instanceof Collection) {
+			logger.warn("Source object<"+sourceBean.getClass().getName()+"> is implementation of collection, it's not compatible for bean structure.");	
+		}
 		
 		for(int i=0;i<fields.length;i++) {
 			
