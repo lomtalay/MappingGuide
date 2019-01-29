@@ -12,6 +12,7 @@ import tester.pojo.SoapResult05;
 import tester.pojo.SoapResult06;
 import tester.pojo.PersonInfo;
 import tester.pojo.Pojo;
+import tester.pojo.PojoWithEnum;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -290,12 +291,51 @@ public class MappingUitlTest {
 		soap03.put("ADR_ROAD", "42 rock wallaby way");
 		
 		
-		logger.info("fillBean  soap01 to persion  using category as [TEST_005]");
+		logger.info("fillBean  soap01 to pojo  using category as [TEST_005]");
 		MappingUtil.fillBean("TEST_005", pojo, soap01);
 
 		assertThat(pojo, hasProperty("testMerge01", equalTo("what does the fox say")));
 		assertThat(pojo, hasProperty("testMerge02", equalTo("2019 SPAIN ALHUMBRA")));
 		assertThat(pojo, hasProperty("testMerge03", equalTo("2019:42 rock wallaby way:Blaxland:Sidney:Australia")));
 	}
+
 	
+	@Test
+	public void test_Enum() {
+		
+		PojoWithEnum pojo = new PojoWithEnum();
+		Map soap01 = new HashMap();
+		
+		soap01.put("name", "p.sherman");
+		soap01.put("category", null);
+		soap01.put("remark", "42 walaby way sidney.");
+		
+		logger.info("fillBean  soap01 to pojo  using category enum as null (expect NA)");
+		MappingUtil.fillBean(null, pojo, soap01);
+		
+		assertThat(pojo, hasProperty("name", equalTo("p.sherman")));
+		assertThat(pojo, hasProperty("category", equalTo(PojoWithEnum.CategoryType.NA)));
+		assertThat(pojo, hasProperty("remark", equalTo("42 walaby way sidney.")));
+		
+
+		soap01.put("category", "A");
+		logger.info("fillBean  soap01 to pojo  using category enum as A (expect Cate_A)");
+		MappingUtil.fillBean(null, pojo, soap01);
+		
+		assertThat(pojo, hasProperty("category", equalTo(PojoWithEnum.CategoryType.Cate_A)));
+
+		soap01.put("category", "B");
+		logger.info("fillBean  soap01 to pojo  using category enum as B (expect Cate_B)");
+		MappingUtil.fillBean(null, pojo, soap01);
+		
+		assertThat(pojo, hasProperty("category", equalTo(PojoWithEnum.CategoryType.Cate_B)));
+
+		soap01.put("category", "C");
+		logger.info("fillBean  soap01 to pojo  using category enum as A (expect Cate_C)");
+		MappingUtil.fillBean(null, pojo, soap01);
+		
+		assertThat(pojo, hasProperty("category", equalTo(PojoWithEnum.CategoryType.Cate_C)));
+		
+		
+	}
 }

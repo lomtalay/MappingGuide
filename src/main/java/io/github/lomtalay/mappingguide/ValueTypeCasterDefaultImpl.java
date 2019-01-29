@@ -17,14 +17,20 @@ public class ValueTypeCasterDefaultImpl implements ValueTypeCaster {
 		
 		if(logger.isTraceEnabled()) {
 			logger.trace(" cast value from "
-					+ " [" + source + ((source!=null)?"<"+source.getClass().getName()+">":"") + " ] to "
+					+ " [" + source + ((source!=null)?"<"+source.getClass().getName()+">":"") + "] to "
 					+ " <"+((targetClass!=null)?targetClass.getName():null)+">");
+
 		}
 		
 		if(targetClass == null) return null;
+		if( targetClass.isEnum() ) {
+			Class<? extends Enum> enumType = (Class<Enum>)targetClass;
+			return enumPick(enumType, source);
+		}
 		if(source == null) return null;
 		
 		Class sourceType = source.getClass();
+		
 		
 		if(	targetClass.equals(Double.class) ||
 			targetClass.equals(Double.TYPE)) {
@@ -100,4 +106,32 @@ public class ValueTypeCasterDefaultImpl implements ValueTypeCaster {
 		return false;
 	}
 
+	private Enum<?> enumPick(Class<? extends Enum> enumType, Object value) {
+		
+		if(logger.isTraceEnabled()) {
+			logger.trace(" enumPick <"+enumType.getName()+"> , value |" + value + "| ");
+		}
+		
+		Object enumSet[] = enumType.getEnumConstants();
+		for(int i=0;i<enumSet.length;i++) {
+			
+			if(logger.isTraceEnabled()) {
+				logger.trace(" enumSet["+i+"] is " + enumSet[i] + ", checking value is " + value);
+			}
+
+			
+			if(	enumSet[i].toString() != null ) {
+				if( enumSet[i].toString()
+								.equals(value)) {
+					return (Enum<?>) enumSet[i];
+				}
+			} else {
+				if(value == null) {
+					return (Enum<?>) enumSet[i];
+				}
+			}
+		}
+
+		throw new RuntimeException("Value ["+value+"] is not compatible with enum <"+enumType.getName()+">");
+	}
 }

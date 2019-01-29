@@ -164,16 +164,8 @@ public class MappingUtil {
 				logger.trace(" enumSet["+i+"] is " + enumSet[i] + ", checking value is " + value);
 			}
 			
-			
-			if(	enumSet[i].toString() != null ) {
-				if( enumSet[i].toString()
-								.equals(value)) {
-					return (Enum<?>) enumSet[i];
-				}
-			} else {
-				if(value == null) {
-					return (Enum<?>) enumSet[i];
-				}
+			if(	enumSet[i].equals(value)) {
+				return (Enum<?>) enumSet[i];
 			}
 		}
 
@@ -202,7 +194,7 @@ public class MappingUtil {
 			}
 
 			public FillCondition condition() {
-				return FillCondition.SKIP_NULL_REPLACEMENT;
+				return FillCondition.REPLACE_ALWAY;
 			}
 
 			public Class typecaster() {
@@ -219,6 +211,7 @@ public class MappingUtil {
 	}
 	
 	
+	@SuppressWarnings("rawtypes")
 	private static void fillValue(Field currentField, Object destBean, Object value, FillCondition targetFillCondition, ValueTypeCaster valueTypeCaster) throws IllegalArgumentException, IllegalAccessException {
 		
 
@@ -234,10 +227,30 @@ public class MappingUtil {
 		if(currentField.getType().isEnum()) {
 			
 			Class<? extends Enum> enumType = (Class<Enum>)currentField.getType();
-			currentField.set(destBean, enumPick(enumType, value));
+			
+			try {
+
+				if(logger.isTraceEnabled()) {
+					logger.trace(" set enum<"+enumType.getName() +"> value |" + value + "| to field |"+currentField.getName()+"|");
+				}
+				currentField.set(destBean, enumPick(enumType, value));
+			} catch (Exception ee) {
+				
+				if(logger.isTraceEnabled()) {
+					logger.trace(" fail : " + ee.getMessage() + " :: retry using type casting  ");
+				}
+				
+				currentField.set(
+						destBean, 
+						valueTypeCaster.cast(value, currentField.getType()));
+			}
 			
 		} else {
 			try {
+				if(logger.isTraceEnabled()) {
+					logger.trace(" set value |" + value + "| to field |"+currentField.getName()+"|");
+				}
+				
 				currentField.set(destBean, value);
 			} catch(IllegalArgumentException ee) {
 				
