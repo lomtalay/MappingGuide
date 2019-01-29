@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import io.github.lomtalay.logger.LocalLogger;
 import io.github.lomtalay.mappingguide.MappingUtil;
+import io.github.lomtalay.mappingguide.annotation.MappingGuide.FillCondition;
 import tester.pojo.SoapResult01;
 import tester.pojo.SoapResult02;
 import tester.pojo.SoapResult03;
@@ -300,6 +301,7 @@ public class MappingUitlTest {
 	}
 
 	
+	@SuppressWarnings("unchecked")
 	@Test
 	public void test_Enum() {
 		
@@ -309,6 +311,9 @@ public class MappingUitlTest {
 		soap01.put("name", "p.sherman");
 		soap01.put("category", null);
 		soap01.put("remark", "42 walaby way sidney.");
+		
+
+		MappingUtil.setGeneralFillCondition(FillCondition.REPLACE_ALWAY);
 		
 		logger.info("fillBean  soap01 to pojo  using category enum as null (expect NA)");
 		MappingUtil.fillBean(null, pojo, soap01);
@@ -323,18 +328,24 @@ public class MappingUitlTest {
 		MappingUtil.fillBean(null, pojo, soap01);
 		
 		assertThat(pojo, hasProperty("category", equalTo(PojoWithEnum.CategoryType.Cate_A)));
+		
+		
 
 		soap01.put("category", "B");
 		logger.info("fillBean  soap01 to pojo  using category enum as B (expect Cate_B)");
 		MappingUtil.fillBean(null, pojo, soap01);
 		
 		assertThat(pojo, hasProperty("category", equalTo(PojoWithEnum.CategoryType.Cate_B)));
+		
+		
 
 		soap01.put("category", "C");
+		soap01.put("name", null);
 		logger.info("fillBean  soap01 to pojo  using category enum as A (expect Cate_C)");
 		MappingUtil.fillBean(null, pojo, soap01);
 		
 		assertThat(pojo, hasProperty("category", equalTo(PojoWithEnum.CategoryType.Cate_C)));
+		assertThat(pojo, hasProperty("name", equalTo(null)));
 		
 		
 	}

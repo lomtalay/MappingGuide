@@ -2,18 +2,12 @@ package io.github.lomtalay.mappingguide;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 
 import io.github.lomtalay.logger.LocalLogger;
-import io.github.lomtalay.logger.LocalLogger.LocalLogLevel;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide;
-import io.github.lomtalay.mappingguide.annotation.MappingGuides;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide.FillCondition;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide.NamingStrictLevel;
 
@@ -24,6 +18,10 @@ public class MappingUtil {
 	protected static LocalLogger logger = LocalLogger.getLogger(MappingUtil.class);
 	private static final ValueTypeCaster defaultValueTypeCaster = new ValueTypeCasterDefaultImpl();
 	private static final ValueExtractor defaultValueExtractor = new ValueExtractorDefaultImpl();
+	private static final NamingStrictLevel defaultNamingStrictLevel = NamingStrictLevel.STRICT;
+	private static final FillCondition defaultFillCondition = FillCondition.SKIP_NULL_REPLACEMENT;
+	private static NamingStrictLevel generalNamingStrictLevel = defaultNamingStrictLevel;
+	private static FillCondition generalFillCondition = defaultFillCondition;
 	private static ValueTypeCaster globalValueTypeCaster = defaultValueTypeCaster;
 	private static ValueExtractor globalValueExtractor = defaultValueExtractor;
 	private static final HashMap<String, AnnotationBorrower> registeredAnnotationBorrower = new HashMap<String, AnnotationBorrower>();
@@ -51,6 +49,31 @@ public class MappingUtil {
 		
 		registeredAnnotationBorrower.put(category, annotationBorrower);
 	}
+
+
+	public static void setGeneralFillCondition(FillCondition newFillCondition) {
+		if(newFillCondition == null) {
+			logger.warn("reset generalFillCondition to default");
+			generalFillCondition = defaultFillCondition;
+		} else {
+			generalFillCondition = newFillCondition;
+		}
+	}
+	public static void setGeneralNamingStrictLevel(NamingStrictLevel newNamingStrictLevel) {
+		if(newNamingStrictLevel == null) {
+			logger.warn("reset generalNamingStrictLevel to default");
+			generalNamingStrictLevel = defaultNamingStrictLevel;
+		} else {
+			generalNamingStrictLevel = newNamingStrictLevel;
+		}
+	}
+	public static NamingStrictLevel getGeneralNamingStrictLevel() {
+		return generalNamingStrictLevel;
+	}
+	public static FillCondition getGeneralFillCondition() {
+		return generalFillCondition;
+	}
+	
 	
 	public static void setGlobalValueExtractor(ValueExtractor newValueExtractor) {
 		if(newValueExtractor == null) {
@@ -60,7 +83,6 @@ public class MappingUtil {
 			globalValueExtractor = newValueExtractor;
 		}
 	}
-
 	public static void setGlobalTypeCaster(ValueTypeCaster newValueTypeCaster) {
 		if(newValueTypeCaster == null) {
 			logger.warn("reset globalValueTypeCaster to default");
@@ -173,6 +195,7 @@ public class MappingUtil {
 	}
 	
 
+	@SuppressWarnings("rawtypes")
 	private static MappingGuide getDefaultAnnotationInstance(final Field currentField) {
 		
 		return new MappingGuide() {
@@ -190,11 +213,11 @@ public class MappingUtil {
 			}
 
 			public NamingStrictLevel namingStrict() {
-				return NamingStrictLevel.STRICT;
+				return generalNamingStrictLevel;
 			}
 
 			public FillCondition condition() {
-				return FillCondition.REPLACE_ALWAY;
+				return generalFillCondition;
 			}
 
 			public Class typecaster() {
@@ -210,8 +233,8 @@ public class MappingUtil {
 			}};
 	}
 	
-	
-	@SuppressWarnings("rawtypes")
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private static void fillValue(Field currentField, Object destBean, Object value, FillCondition targetFillCondition, ValueTypeCaster valueTypeCaster) throws IllegalArgumentException, IllegalAccessException {
 		
 
