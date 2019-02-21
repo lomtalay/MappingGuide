@@ -3,8 +3,11 @@ package io.github.lomtalay.mappingguide;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import io.github.lomtalay.logger.LocalLogger;
 import io.github.lomtalay.mappingguide.annotation.MappingGuide;
@@ -103,10 +106,29 @@ public class MappingUtil {
 		return extractFieldValue(fieldName, sourceObj, 0);
 	}
 	
+	private static Field[] getAllFields(Class<?> type) {
+		List<Field> fieldsList = getAllFields(null, type);
+		
+		return fieldsList.toArray(new Field[fieldsList.size()]);
+	}
+	private static List<Field> getAllFields(List<Field> fields, Class<?> type) {
+		if(fields == null) fields = new ArrayList<Field>();
+	    fields.addAll(Arrays.asList(type.getDeclaredFields()));
+
+	    Class superType = type.getSuperclass();
+	    
+	    if (superType != null && !superType.getName().startsWith("java.lang.") && !superType.getName().startsWith("java.util.")) {
+	        getAllFields(fields, type.getSuperclass());
+	    }
+
+	    return fields;
+	}
+	
+	
 	@SuppressWarnings("rawtypes")
 	public static Object extractFieldValue(String fieldName, Object sourceObj, int strictLevel) throws IllegalArgumentException, IllegalAccessException {
 		Class cls = sourceObj.getClass();
-		Field fields[] = cls.getDeclaredFields();
+		Field fields[] = getAllFields(cls);
 		Object result = null;
 		
 		for(int i=0;i<fields.length;i++) {
@@ -519,7 +541,7 @@ public class MappingUtil {
 			valueTypeCaster = globalValueTypeCaster;
 		}
 		Class destClass = destBean.getClass();
-		Field fields[] = destClass.getDeclaredFields();
+		Field fields[] =  getAllFields(destClass);
 		
 		if(sourceBean instanceof Collection) {
 			logger.warn("Source object<"+sourceBean.getClass().getName()+"> is implementation of collection, it's not compatible for bean structure.");	

@@ -13,6 +13,7 @@ import tester.pojo.SoapResult05;
 import tester.pojo.SoapResult06;
 import tester.pojo.PersonInfo;
 import tester.pojo.Pojo;
+import tester.pojo.PojoSub;
 import tester.pojo.PojoWithEnum;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -153,7 +154,7 @@ public class MappingUitlTest {
 	@Test
 	public void test_002() {
 		
-		Pojo pojo = new Pojo();
+		PojoSub pojo = new PojoSub();
 		
 		SoapResult05 dataPart5 = new SoapResult05();
 		dataPart5.setSampleBigInteger(new BigInteger("20181228"));
@@ -240,7 +241,7 @@ public class MappingUitlTest {
 	@Test
 	public void test_005() {
 		
-		Pojo pojo = new Pojo();
+		PojoSub pojo = new PojoSub();
 		SoapResult01 soap01 = new SoapResult01();
 		SoapResult02 soap02 = new SoapResult02();
 		SoapResult03 soap03 = new SoapResult03();
@@ -272,7 +273,7 @@ public class MappingUitlTest {
 	@Test
 	public void test_006() {
 		
-		Pojo pojo = new Pojo();
+		PojoSub pojo = new PojoSub();
 		Map soap01 = new HashMap();
 		Map soap02 = new HashMap();
 		Map soap03 = new HashMap();

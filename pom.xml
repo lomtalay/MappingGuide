@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.lomtalay</groupId>
 	<artifactId>MappingGuide</artifactId>
-	<version>1.0.1-RELEASE</version>
+	<version>1.0.2-SNAPSHOT</version>
 	<name>MappingGuide</name>
 	<url>https://github.com/lomtalay/MappingGuide</url>
 	<description>Utility to help for combine properties value from multiple POJO to mapping defined POJO</description>

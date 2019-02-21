@@ -119,14 +119,13 @@ public class ValueTypeCasterDefaultImpl implements ValueTypeCaster {
 				logger.trace(" enumSet["+i+"] is " + enumSet[i] + ", checking value is " + value);
 			}
 
-			
-			if(	enumSet[i].toString() != null ) {
-				if( enumSet[i].toString()
-								.equals(value)) {
+
+			if(	value != null ) {
+				if( String.valueOf(value).equals(enumSet[i].toString())) {
 					return (Enum<?>) enumSet[i];
 				}
 			} else {
-				if(value == null) {
+				if(enumSet[i] == null) {
 					return (Enum<?>) enumSet[i];
 				}
 			}
